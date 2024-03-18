@@ -57,6 +57,18 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
         }
         this.context.parameters.records.refresh();
       };
+      loadFirstPage = (): void => {
+        this.currentPage = 1;
+        this.context.parameters.records.paging.loadExactPage(1);
+      };
+      loadNextPage = (): void => {
+        this.currentPage++;
+        this.context.parameters.records.paging.loadExactPage(this.currentPage);
+      };
+      loadPreviousPage = (): void => {
+        this.currentPage--;
+        this.context.parameters.records.paging.loadExactPage(this.currentPage);
+      };
 
     /**
      * Empty constructor.
@@ -143,6 +155,9 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
                 onNavigate: this.onNavigate,
                 onSort: this.onSort,
                 onFilter: this.onFilter,
+                loadFirstPage: this.loadFirstPage,
+                loadNextPage: this.loadNextPage,
+                loadPreviousPage: this.loadPreviousPage,
             }),
             this.container
         );

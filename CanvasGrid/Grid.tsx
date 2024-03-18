@@ -18,10 +18,16 @@ import { IRenderFunction } from '@fluentui/react/lib/Utilities';
 import * as React from 'react';
 import { useConst, useForceUpdate } from "@fluentui/react-hooks";
 import { Selection } from "@fluentui/react/lib/Selection";
+import { IconButton } from '@fluentui/react/lib/Button';
 import { SelectionMode } from "@fluentui/react/lib/Utilities";
 import { ContextualMenu, DirectionalHint, IContextualMenuProps } from '@fluentui/react/lib/ContextualMenu';
 type DataSet = ComponentFramework.PropertyHelper.DataSetApi.EntityRecord & IObjectWithKey;
-
+function stringFormat(template: string, ...args: string[]): string {
+    for (const k in args) {
+        template = template.replace("{" + k + "}", args[k]);
+    }
+    return template;
+}
 export interface GridProps {
     width?: number;
     height?: number;
@@ -42,6 +48,9 @@ export interface GridProps {
     onNavigate: (item?: ComponentFramework.PropertyHelper.DataSetApi.EntityRecord) => void;
     onSort: (name: string, desc: boolean) => void;
     onFilter: (name: string, filtered: boolean) => void;
+    loadFirstPage: () => void;
+    loadNextPage: () => void;
+    loadPreviousPage: () => void;
 }
 
 const onRenderDetailsHeader: IRenderFunction<IDetailsHeaderProps> = (props, defaultRender) => {
@@ -83,9 +92,12 @@ export const Grid = React.memo((props: GridProps) => {
         itemsLoading,
         setSelectedRecords,
         onNavigate,
-        onSort, 
-        onFilter, 
+        onSort,
+        onFilter,
         resources,
+        loadFirstPage, 
+        loadNextPage, 
+        loadPreviousPage,
     } = props;
 
     const forceUpdate = useForceUpdate();
@@ -109,91 +121,91 @@ export const Grid = React.memo((props: GridProps) => {
 
     const [isComponentLoading, setIsLoading] = React.useState<boolean>(false);
 
-const [contextualMenuProps, setContextualMenuProps] =
-    React.useState<IContextualMenuProps>();
+    const [contextualMenuProps, setContextualMenuProps] =
+        React.useState<IContextualMenuProps>();
 
-const onContextualMenuDismissed = React.useCallback(() => {
-    setContextualMenuProps(undefined);
-  }, [setContextualMenuProps]);
+    const onContextualMenuDismissed = React.useCallback(() => {
+        setContextualMenuProps(undefined);
+    }, [setContextualMenuProps]);
 
-const getContextualMenuProps = React.useCallback(
-    (
-      column: IColumn,
-      ev: React.MouseEvent<HTMLElement>
-    ): IContextualMenuProps => {
-      const menuItems = [
-        {
-          key: "aToZ",
-          name: resources.getString("Label_SortAZ"),
-          iconProps: { iconName: "SortUp" },
-          canCheck: true,
-          checked: column.isSorted && !column.isSortedDescending,
-          disable: (
-            column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
-          ).disableSorting,
-          onClick: () => {
-            onSort(column.key, false);
-            setContextualMenuProps(undefined);
-            setIsLoading(true);
-          },
+    const getContextualMenuProps = React.useCallback(
+        (
+            column: IColumn,
+            ev: React.MouseEvent<HTMLElement>
+        ): IContextualMenuProps => {
+            const menuItems = [
+                {
+                    key: "aToZ",
+                    name: resources.getString("Label_SortAZ"),
+                    iconProps: { iconName: "SortUp" },
+                    canCheck: true,
+                    checked: column.isSorted && !column.isSortedDescending,
+                    disable: (
+                        column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
+                    ).disableSorting,
+                    onClick: () => {
+                        onSort(column.key, false);
+                        setContextualMenuProps(undefined);
+                        setIsLoading(true);
+                    },
+                },
+                {
+                    key: "zToA",
+                    name: resources.getString("Label_SortZA"),
+                    iconProps: { iconName: "SortDown" },
+                    canCheck: true,
+                    checked: column.isSorted && column.isSortedDescending,
+                    disable: (
+                        column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
+                    ).disableSorting,
+                    onClick: () => {
+                        onSort(column.key, true);
+                        setContextualMenuProps(undefined);
+                        setIsLoading(true);
+                    },
+                },
+                {
+                    key: "filter",
+                    name: resources.getString("Label_DoesNotContainData"),
+                    iconProps: { iconName: "Filter" },
+                    canCheck: true,
+                    checked: column.isFiltered,
+                    onClick: () => {
+                        onFilter(column.key, column.isFiltered !== true);
+                        setContextualMenuProps(undefined);
+                        setIsLoading(true);
+                    },
+                },
+            ];
+            return {
+                items: menuItems,
+                target: ev.currentTarget as HTMLElement,
+                directionalHint: DirectionalHint.bottomLeftEdge,
+                gapSpace: 10,
+                isBeakVisible: true,
+                onDismiss: onContextualMenuDismissed,
+            };
         },
-        {
-          key: "zToA",
-          name: resources.getString("Label_SortZA"),
-          iconProps: { iconName: "SortDown" },
-          canCheck: true,
-          checked: column.isSorted && column.isSortedDescending,
-          disable: (
-            column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
-          ).disableSorting,
-          onClick: () => {
-            onSort(column.key, true);
-            setContextualMenuProps(undefined);
-            setIsLoading(true);
-          },
-        },
-        {
-          key: "filter",
-          name: resources.getString("Label_DoesNotContainData"),
-          iconProps: { iconName: "Filter" },
-          canCheck: true,
-          checked: column.isFiltered,
-          onClick: () => {
-            onFilter(column.key, column.isFiltered !== true);
-            setContextualMenuProps(undefined);
-            setIsLoading(true);
-          },
-        },
-      ];
-      return {
-        items: menuItems,
-        target: ev.currentTarget as HTMLElement,
-        directionalHint: DirectionalHint.bottomLeftEdge,
-        gapSpace: 10,
-        isBeakVisible: true,
-        onDismiss: onContextualMenuDismissed,
-      };
-    },
-    [setIsLoading, onFilter, setContextualMenuProps]
-  );
+        [setIsLoading, onFilter, setContextualMenuProps]
+    );
 
-const onColumnContextMenu = React.useCallback(
-    (column?: IColumn, ev?: React.MouseEvent<HTMLElement>) => {
-      if (column && ev) {
-        setContextualMenuProps(getContextualMenuProps(column, ev));
-      }
-    },
-    [getContextualMenuProps, setContextualMenuProps]
-  );
+    const onColumnContextMenu = React.useCallback(
+        (column?: IColumn, ev?: React.MouseEvent<HTMLElement>) => {
+            if (column && ev) {
+                setContextualMenuProps(getContextualMenuProps(column, ev));
+            }
+        },
+        [getContextualMenuProps, setContextualMenuProps]
+    );
 
-const onColumnClick = React.useCallback(
-    (ev: React.MouseEvent<HTMLElement>, column: IColumn) => {
-      if (column && ev) {
-        setContextualMenuProps(getContextualMenuProps(column, ev));
-      }
-    },
-    [getContextualMenuProps, setContextualMenuProps]
-  );
+    const onColumnClick = React.useCallback(
+        (ev: React.MouseEvent<HTMLElement>, column: IColumn) => {
+            if (column && ev) {
+                setContextualMenuProps(getContextualMenuProps(column, ev));
+            }
+        },
+        [getContextualMenuProps, setContextualMenuProps]
+    );
 
     const items: (DataSet | undefined)[] = React.useMemo(() => {
         setIsLoading(false);
@@ -258,6 +270,35 @@ const onColumnClick = React.useCallback(
                     {contextualMenuProps && <ContextualMenu {...contextualMenuProps} />}
                 </ScrollablePane>
                 {(itemsLoading || isComponentLoading) && <Overlay />}
+            </Stack.Item>
+            <Stack.Item>
+                <Stack horizontal style={{ width: '100%', paddingLeft: 8, paddingRight: 8 }}>
+                    <IconButton
+                        alt="First Page"
+                        iconProps={{ iconName: 'Rewind' }}
+                        disabled={!hasPreviousPage}
+                        onClick={loadFirstPage}
+                    />
+                    <IconButton
+                        alt="Previous Page"
+                        iconProps={{ iconName: 'Previous' }}
+                        disabled={!hasPreviousPage}
+                        onClick={loadPreviousPage}
+                    />
+                    <Stack.Item align="center">
+                        {stringFormat(
+                            resources.getString('Label_Grid_Footer'),
+                            currentPage.toString(),
+                            selection.getSelectedCount().toString(),
+                        )}
+                    </Stack.Item>
+                    <IconButton
+                        alt="Next Page"
+                        iconProps={{ iconName: 'Next' }}
+                        disabled={!hasNextPage}
+                        onClick={loadNextPage}
+                    />
+                </Stack>
             </Stack.Item>
         </Stack>
     );
