@@ -4,6 +4,9 @@ import {
     DetailsListLayoutMode,
     IColumn,
     IDetailsHeaderProps,
+    IDetailsListProps,
+    IDetailsRowStyles,
+    DetailsRow
 } from '@fluentui/react/lib/DetailsList';
 import { Overlay } from '@fluentui/react/lib/Overlay';
 import {
@@ -27,10 +30,10 @@ type DataSet = ComponentFramework.PropertyHelper.DataSetApi.EntityRecord & IObje
 
 function stringFormat(template: string, ...args: string[]): string {
     for (const k in args) {
-      template = template.replace("{" + k + "}", args[k]);
+        template = template.replace("{" + k + "}", args[k]);
     }
     return template;
-  }
+}
 
 export interface GridProps {
     width?: number;
@@ -55,6 +58,8 @@ export interface GridProps {
     loadFirstPage: () => void;
     loadNextPage: () => void;
     loadPreviousPage: () => void;
+    onFullScreen: () => void;
+    isFullScreen: boolean;
 }
 
 const onRenderDetailsHeader: IRenderFunction<IDetailsHeaderProps> = (props, defaultRender) => {
@@ -96,12 +101,16 @@ export const Grid = React.memo((props: GridProps) => {
         itemsLoading,
         setSelectedRecords,
         onNavigate,
-        onSort, 
-        onFilter, 
+        onSort,
+        onFilter,
         resources,
-        loadFirstPage, 
-        loadNextPage, 
+        loadFirstPage,
+        loadNextPage,
         loadPreviousPage,
+        onFullScreen, 
+        isFullScreen,
+        highlightValue, 
+        highlightColor,
     } = props;
     const forceUpdate = useForceUpdate();
     const onSelectionChanged = React.useCallback(() => {
@@ -124,91 +133,91 @@ export const Grid = React.memo((props: GridProps) => {
 
     const [isComponentLoading, setIsLoading] = React.useState<boolean>(false);
 
-const [contextualMenuProps, setContextualMenuProps] =
-    React.useState<IContextualMenuProps>();
+    const [contextualMenuProps, setContextualMenuProps] =
+        React.useState<IContextualMenuProps>();
 
-const onContextualMenuDismissed = React.useCallback(() => {
-    setContextualMenuProps(undefined);
-  }, [setContextualMenuProps]);
+    const onContextualMenuDismissed = React.useCallback(() => {
+        setContextualMenuProps(undefined);
+    }, [setContextualMenuProps]);
 
-const getContextualMenuProps = React.useCallback(
-    (
-      column: IColumn,
-      ev: React.MouseEvent<HTMLElement>
-    ): IContextualMenuProps => {
-      const menuItems = [
-        {
-          key: "aToZ",
-          name: resources.getString("Label_SortAZ"),
-          iconProps: { iconName: "SortUp" },
-          canCheck: true,
-          checked: column.isSorted && !column.isSortedDescending,
-          disable: (
-            column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
-          ).disableSorting,
-          onClick: () => {
-            onSort(column.key, false);
-            setContextualMenuProps(undefined);
-            setIsLoading(true);
-          },
+    const getContextualMenuProps = React.useCallback(
+        (
+            column: IColumn,
+            ev: React.MouseEvent<HTMLElement>
+        ): IContextualMenuProps => {
+            const menuItems = [
+                {
+                    key: "aToZ",
+                    name: resources.getString("Label_SortAZ"),
+                    iconProps: { iconName: "SortUp" },
+                    canCheck: true,
+                    checked: column.isSorted && !column.isSortedDescending,
+                    disable: (
+                        column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
+                    ).disableSorting,
+                    onClick: () => {
+                        onSort(column.key, false);
+                        setContextualMenuProps(undefined);
+                        setIsLoading(true);
+                    },
+                },
+                {
+                    key: "zToA",
+                    name: resources.getString("Label_SortZA"),
+                    iconProps: { iconName: "SortDown" },
+                    canCheck: true,
+                    checked: column.isSorted && column.isSortedDescending,
+                    disable: (
+                        column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
+                    ).disableSorting,
+                    onClick: () => {
+                        onSort(column.key, true);
+                        setContextualMenuProps(undefined);
+                        setIsLoading(true);
+                    },
+                },
+                {
+                    key: "filter",
+                    name: resources.getString("Label_DoesNotContainData"),
+                    iconProps: { iconName: "Filter" },
+                    canCheck: true,
+                    checked: column.isFiltered,
+                    onClick: () => {
+                        onFilter(column.key, column.isFiltered !== true);
+                        setContextualMenuProps(undefined);
+                        setIsLoading(true);
+                    },
+                },
+            ];
+            return {
+                items: menuItems,
+                target: ev.currentTarget as HTMLElement,
+                directionalHint: DirectionalHint.bottomLeftEdge,
+                gapSpace: 10,
+                isBeakVisible: true,
+                onDismiss: onContextualMenuDismissed,
+            };
         },
-        {
-          key: "zToA",
-          name: resources.getString("Label_SortZA"),
-          iconProps: { iconName: "SortDown" },
-          canCheck: true,
-          checked: column.isSorted && column.isSortedDescending,
-          disable: (
-            column.data as ComponentFramework.PropertyHelper.DataSetApi.Column
-          ).disableSorting,
-          onClick: () => {
-            onSort(column.key, true);
-            setContextualMenuProps(undefined);
-            setIsLoading(true);
-          },
-        },
-        {
-          key: "filter",
-          name: resources.getString("Label_DoesNotContainData"),
-          iconProps: { iconName: "Filter" },
-          canCheck: true,
-          checked: column.isFiltered,
-          onClick: () => {
-            onFilter(column.key, column.isFiltered !== true);
-            setContextualMenuProps(undefined);
-            setIsLoading(true);
-          },
-        },
-      ];
-      return {
-        items: menuItems,
-        target: ev.currentTarget as HTMLElement,
-        directionalHint: DirectionalHint.bottomLeftEdge,
-        gapSpace: 10,
-        isBeakVisible: true,
-        onDismiss: onContextualMenuDismissed,
-      };
-    },
-    [setIsLoading, onFilter, setContextualMenuProps]
-  );
+        [setIsLoading, onFilter, setContextualMenuProps]
+    );
 
-const onColumnContextMenu = React.useCallback(
-    (column?: IColumn, ev?: React.MouseEvent<HTMLElement>) => {
-      if (column && ev) {
-        setContextualMenuProps(getContextualMenuProps(column, ev));
-      }
-    },
-    [getContextualMenuProps, setContextualMenuProps]
-  );
+    const onColumnContextMenu = React.useCallback(
+        (column?: IColumn, ev?: React.MouseEvent<HTMLElement>) => {
+            if (column && ev) {
+                setContextualMenuProps(getContextualMenuProps(column, ev));
+            }
+        },
+        [getContextualMenuProps, setContextualMenuProps]
+    );
 
-const onColumnClick = React.useCallback(
-    (ev: React.MouseEvent<HTMLElement>, column: IColumn) => {
-      if (column && ev) {
-        setContextualMenuProps(getContextualMenuProps(column, ev));
-      }
-    },
-    [getContextualMenuProps, setContextualMenuProps]
-  );
+    const onColumnClick = React.useCallback(
+        (ev: React.MouseEvent<HTMLElement>, column: IColumn) => {
+            if (column && ev) {
+                setContextualMenuProps(getContextualMenuProps(column, ev));
+            }
+        },
+        [getContextualMenuProps, setContextualMenuProps]
+    );
 
     const items: (DataSet | undefined)[] = React.useMemo(() => {
         setIsLoading(false);
@@ -253,58 +262,76 @@ const onColumnClick = React.useCallback(
         };
     }, [width, height]);
 
+    const onRenderRow: IDetailsListProps['onRenderRow'] = (props) => {
+        const customStyles: Partial<IDetailsRowStyles> = {};
+        if (props && props.item) {
+            const item = props.item as DataSet | undefined;
+            if (highlightColor && highlightValue && item?.getValue('HighlightIndicator') == highlightValue) {
+                customStyles.root = { backgroundColor: highlightColor };
+            }
+            return <DetailsRow {...props} styles={customStyles} />;
+        }
+        return null;
+    };
+
     return (
-  <Stack verticalFill grow style={rootContainerStyle}>
-      <Stack.Item grow style={{ position: 'relative', backgroundColor: 'white' }}>
-        <ScrollablePane scrollbarVisibility={ScrollbarVisibility.auto}>
-            <DetailsList
-              columns={gridColumns}
-              onRenderItemColumn={onRenderItemColumn}
-              onRenderDetailsHeader={onRenderDetailsHeader}
-              items={items}
-              setKey={`set${currentPage}`} // Ensures that the selection is reset when paging
-              initialFocusedIndex={0}
-              checkButtonAriaLabel="select row"
-              layoutMode={DetailsListLayoutMode.fixedColumns}
-              constrainMode={ConstrainMode.unconstrained}
-              selection={selection}
-              onItemInvoked={onNavigate}
-            ></DetailsList>
-            {contextualMenuProps && <ContextualMenu {...contextualMenuProps} />}
-        </ScrollablePane>
-        {(itemsLoading || isComponentLoading) && <Overlay />}
-      </Stack.Item>
-      <Stack.Item>
-        <Stack horizontal style={{ width: '100%', paddingLeft: 8, paddingRight: 8 }}>
-            <IconButton
-              alt="First Page"
-              iconProps={{ iconName: 'Rewind' }}
-              disabled={!hasPreviousPage}
-              onClick={loadFirstPage}
-            />
-            <IconButton
-              alt="Previous Page"
-              iconProps={{ iconName: 'Previous' }}
-              disabled={!hasPreviousPage}
-              onClick={loadPreviousPage}
-            />
-            <Stack.Item align="center">
-              {stringFormat(
-                  resources.getString('Label_Grid_Footer'),
-                  currentPage.toString(),
-                  selection.getSelectedCount().toString(),
-              )}
+        <Stack verticalFill grow style={rootContainerStyle}>
+            <Stack.Item grow style={{ position: 'relative', backgroundColor: 'white' }}>
+                <ScrollablePane scrollbarVisibility={ScrollbarVisibility.auto}>
+                    <DetailsList
+                        columns={gridColumns}
+                        onRenderItemColumn={onRenderItemColumn}
+                        onRenderDetailsHeader={onRenderDetailsHeader}
+                        items={items}
+                        setKey={`set${currentPage}`} // Ensures that the selection is reset when paging
+                        initialFocusedIndex={0}
+                        checkButtonAriaLabel="select row"
+                        layoutMode={DetailsListLayoutMode.fixedColumns}
+                        constrainMode={ConstrainMode.unconstrained}
+                        selection={selection}
+                        onItemInvoked={onNavigate}
+                        onRenderRow={onRenderRow}
+                    ></DetailsList>
+                    {contextualMenuProps && <ContextualMenu {...contextualMenuProps} />}
+                </ScrollablePane>
+                {(itemsLoading || isComponentLoading) && <Overlay />}
             </Stack.Item>
-            <IconButton
-              alt="Next Page"
-              iconProps={{ iconName: 'Next' }}
-              disabled={!hasNextPage}
-              onClick={loadNextPage}
-            />
+            <Stack.Item>
+                <Stack horizontal style={{ width: '100%', paddingLeft: 8, paddingRight: 8 }}>
+                    <Stack.Item grow align="center">
+                        {!isFullScreen && (
+                            <Link onClick={onFullScreen}>{resources.getString('Label_ShowFullScreen')}</Link>
+                        )}
+                    </Stack.Item>
+                    <IconButton
+                        alt="First Page"
+                        iconProps={{ iconName: 'Rewind' }}
+                        disabled={!hasPreviousPage}
+                        onClick={loadFirstPage}
+                    />
+                    <IconButton
+                        alt="Previous Page"
+                        iconProps={{ iconName: 'Previous' }}
+                        disabled={!hasPreviousPage}
+                        onClick={loadPreviousPage}
+                    />
+                    <Stack.Item align="center">
+                        {stringFormat(
+                            resources.getString('Label_Grid_Footer'),
+                            currentPage.toString(),
+                            selection.getSelectedCount().toString(),
+                        )}
+                    </Stack.Item>
+                    <IconButton
+                        alt="Next Page"
+                        iconProps={{ iconName: 'Next' }}
+                        disabled={!hasNextPage}
+                        onClick={loadNextPage}
+                    />
+                </Stack>
+            </Stack.Item>
         </Stack>
-      </Stack.Item>
-  </Stack>
-);
+    );
 });
 
 Grid.displayName = 'Grid';
