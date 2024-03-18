@@ -143,6 +143,10 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
             this.filteredRecordCount = this.sortedRecordsIds.length;
             this.notifyOutputChanged();
         }
+        let backgroundColor = "white";
+        if(this.context.parameters.BackgroundColor.raw){
+            backgroundColor = this.context.parameters.BackgroundColor.raw;
+        }
         
 
         ReactDOM.render(
@@ -171,6 +175,7 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
                 loadPreviousPage: this.loadPreviousPage,
                 isFullScreen: this.isFullScreen,
                 onFullScreen: this.onFullScreen,
+                backgroundColor: backgroundColor,
             }),
             this.container
         );

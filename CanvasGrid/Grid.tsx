@@ -48,6 +48,7 @@ export interface GridProps {
     itemsLoading: boolean;
     highlightValue: string | null;
     highlightColor: string | null;
+    backgroundColor: string;
     setSelectedRecords: (ids: string[]) => void;
     onNavigate: (item?: ComponentFramework.PropertyHelper.DataSetApi.EntityRecord) => void;
     onSort: (name: string, desc: boolean) => void;
@@ -108,6 +109,7 @@ export const Grid = React.memo((props: GridProps) => {
         isFullScreen,
         highlightValue, 
         highlightColor,
+        backgroundColor,
     } = props;
 
     const forceUpdate = useForceUpdate();
@@ -274,7 +276,7 @@ export const Grid = React.memo((props: GridProps) => {
 
     return (
         <Stack verticalFill grow style={rootContainerStyle}>
-            <Stack.Item grow style={{ position: 'relative', backgroundColor: 'white' }}>
+            <Stack.Item grow style={{ position: 'relative', backgroundColor: backgroundColor }}>
                 <ScrollablePane scrollbarVisibility={ScrollbarVisibility.auto}>
                     <DetailsList
                         columns={gridColumns}

@@ -43,6 +43,12 @@
       of-type="SingleLine.Text"
       usage="input"
       required="true"/>
+    <property name="BackgroundColor"
+      display-name-key="BackgroundColor_Disp"
+      description-key="BackgroundColor_Desc"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="true"/>
     <resources>
       <code path="index.ts" order="1"/>
       <resx path="strings/CanvasGrid.1033.resx"
