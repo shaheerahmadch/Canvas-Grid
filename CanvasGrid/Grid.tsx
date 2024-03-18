@@ -1,3 +1,4 @@
+import { Link } from '@fluentui/react/lib/Link';
 import {
     DetailsList,
     ConstrainMode,
@@ -51,6 +52,8 @@ export interface GridProps {
     loadFirstPage: () => void;
     loadNextPage: () => void;
     loadPreviousPage: () => void;
+    onFullScreen: () => void;
+    isFullScreen: boolean;
 }
 
 const onRenderDetailsHeader: IRenderFunction<IDetailsHeaderProps> = (props, defaultRender) => {
@@ -95,9 +98,11 @@ export const Grid = React.memo((props: GridProps) => {
         onSort,
         onFilter,
         resources,
-        loadFirstPage, 
-        loadNextPage, 
+        loadFirstPage,
+        loadNextPage,
         loadPreviousPage,
+        onFullScreen, 
+        isFullScreen,
     } = props;
 
     const forceUpdate = useForceUpdate();
@@ -273,6 +278,11 @@ export const Grid = React.memo((props: GridProps) => {
             </Stack.Item>
             <Stack.Item>
                 <Stack horizontal style={{ width: '100%', paddingLeft: 8, paddingRight: 8 }}>
+                    <Stack.Item grow align="center">
+                        {!isFullScreen && (
+                            <Link onClick={onFullScreen}>{resources.getString('Label_ShowFullScreen')}</Link>
+                        )}
+                    </Stack.Item>
                     <IconButton
                         alt="First Page"
                         iconProps={{ iconName: 'Rewind' }}

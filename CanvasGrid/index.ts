@@ -18,6 +18,7 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
     };
     currentPage = 1;
     filteredRecordCount?: number;
+    isFullScreen = false;
 
     setSelectedRecords = (ids: string[]): void => {
         this.context.parameters.records.setSelectedRecordIds(ids);
@@ -69,6 +70,9 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
         this.currentPage--;
         this.context.parameters.records.paging.loadExactPage(this.currentPage);
       };
+      onFullScreen = (): void => {
+        this.context.mode.setFullScreen(true);
+      };
 
     /**
      * Empty constructor.
@@ -112,7 +116,14 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
             !dataset.loading &&
             !dataset.paging.hasPreviousPage &&
             this.currentPage !== 1;
-
+    
+        if (context.updatedProperties.indexOf('fullscreen_close') > -1) {
+            this.isFullScreen = false;
+        }
+        if (context.updatedProperties.indexOf('fullscreen_open') > -1) {
+            this.isFullScreen = true;
+        }
+    
         if (resetPaging) {
             this.currentPage = 1;
         }
@@ -158,6 +169,8 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
                 loadFirstPage: this.loadFirstPage,
                 loadNextPage: this.loadNextPage,
                 loadPreviousPage: this.loadPreviousPage,
+                isFullScreen: this.isFullScreen,
+                onFullScreen: this.onFullScreen,
             }),
             this.container
         );
