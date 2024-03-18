@@ -18,14 +18,35 @@
       -->
     </external-service-usage>
     <!-- dataset node represents a set of entity records on CDS; allow more than one datasets -->
-    <data-set name="sampleDataSet" display-name-key="Dataset_Display_Key">
-      <!-- 'property-set' node represents a unique, configurable property that each record in the dataset must provide. -->
-      <!-- UNCOMMENT TO ADD PROPERTY-SET NODE
-      <property-set name="samplePropertySet" display-name-key="Property_Display_Key" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="bound" required="true" />
-      -->
+    <data-set name="records" display-name-key="Records_Dataset_Display">
+      <property-set name="HighlightIndicator"
+        display-name-key="HighlightIndicator_Disp"
+        description-key="HighlightIndicator_Desc"
+        of-type="SingleLine.Text"
+        usage="bound"
+        required="true" />
     </data-set>
+    <property name="FilteredRecordCount"
+      display-name-key="FilteredRecordCount_Disp"
+      description-key="FilteredRecordCount_Desc"
+      of-type="Whole.None"
+      usage="output" />
+    <property name="HighlightValue"
+      display-name-key="HighlightValue_Disp"
+      description-key="HighlightValue_Desc"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="true"/>
+    <property name="HighlightColor"
+      display-name-key="HighlightColor_Disp"
+      description-key="HighlightColor_Desc"
+      of-type="SingleLine.Text"
+      usage="input"
+      required="true"/>
     <resources>
       <code path="index.ts" order="1"/>
+      <resx path="strings/CanvasGrid.1033.resx"
+      version="1.0.0" />
       <!-- UNCOMMENT TO ADD MORE RESOURCES
       <css path="css/CanvasGrid.css" order="1" />
       <resx path="strings/CanvasGrid.1033.resx" version="1.0.0" />
