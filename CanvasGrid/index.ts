@@ -153,7 +153,9 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as “bound” or “output”
      */
     public getOutputs(): IOutputs {
-        return {};
+        return {
+            FilteredRecordCount: this.filteredRecordCount,
+        } as IOutputs;
     }
 
     /**
