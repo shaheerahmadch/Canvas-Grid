@@ -5,6 +5,9 @@ import {
     DetailsListLayoutMode,
     IColumn,
     IDetailsHeaderProps,
+    IDetailsListProps,
+    IDetailsRowStyles,
+    DetailsRow
 } from '@fluentui/react/lib/DetailsList';
 import { Overlay } from '@fluentui/react/lib/Overlay';
 import {
@@ -103,6 +106,8 @@ export const Grid = React.memo((props: GridProps) => {
         loadPreviousPage,
         onFullScreen, 
         isFullScreen,
+        highlightValue, 
+        highlightColor,
     } = props;
 
     const forceUpdate = useForceUpdate();
@@ -255,6 +260,18 @@ export const Grid = React.memo((props: GridProps) => {
         };
     }, [width, height]);
 
+    const onRenderRow: IDetailsListProps['onRenderRow'] = (props) => {
+        const customStyles: Partial<IDetailsRowStyles> = {};
+        if (props && props.item) {
+            const item = props.item as DataSet | undefined;
+            if (highlightColor && highlightValue && item?.getValue('HighlightIndicator') == highlightValue) {
+                customStyles.root = { backgroundColor: highlightColor };
+            }
+            return <DetailsRow {...props} styles={customStyles} />;
+        }
+        return null;
+    };
+
     return (
         <Stack verticalFill grow style={rootContainerStyle}>
             <Stack.Item grow style={{ position: 'relative', backgroundColor: 'white' }}>
@@ -271,6 +288,7 @@ export const Grid = React.memo((props: GridProps) => {
                         constrainMode={ConstrainMode.unconstrained}
                         selection={selection}
                         onItemInvoked={onNavigate}
+                        onRenderRow={onRenderRow}
                     ></DetailsList>
                     {contextualMenuProps && <ContextualMenu {...contextualMenuProps} />}
                 </ScrollablePane>
