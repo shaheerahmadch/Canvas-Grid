@@ -19,6 +19,17 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
     currentPage = 1;
     filteredRecordCount?: number;
 
+    setSelectedRecords = (ids: string[]): void => {
+        this.context.parameters.records.setSelectedRecordIds(ids);
+    };
+    onNavigate = (
+        item?: ComponentFramework.PropertyHelper.DataSetApi.EntityRecord
+    ): void => {
+        if (item) {
+            this.context.parameters.records.openDatasetItem(item.getNamedReference());
+        }
+    };
+
     /**
      * Empty constructor.
      */
@@ -61,7 +72,7 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
             !dataset.loading &&
             !dataset.paging.hasPreviousPage &&
             this.currentPage !== 1;
-    
+
         if (resetPaging) {
             this.currentPage = 1;
         }
@@ -69,7 +80,7 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
             this.records = dataset.records;
             this.sortedRecordsIds = dataset.sortedRecordIds;
         }
-    
+
         // The test harness provides width/height as strings
         const allocatedWidth = parseInt(
             context.mode.allocatedWidth as unknown as string
@@ -77,7 +88,7 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
         const allocatedHeight = parseInt(
             context.mode.allocatedHeight as unknown as string
         );
-    
+
         ReactDOM.render(
             React.createElement(Grid, {
                 width: allocatedWidth,
@@ -95,6 +106,8 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
                 itemsLoading: dataset.loading,
                 highlightValue: this.context.parameters.HighlightValue.raw,
                 highlightColor: this.context.parameters.HighlightColor.raw,
+                setSelectedRecords: this.setSelectedRecords,
+                onNavigate: this.onNavigate,
             }),
             this.container
         );
@@ -104,8 +117,7 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
      * It is called by the framework prior to a control receiving new data.
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as “bound” or “output”
      */
-    public getOutputs(): IOutputs
-    {
+    public getOutputs(): IOutputs {
         return {};
     }
 

@@ -6,9 +6,9 @@ import {
     IDetailsHeaderProps,
 } from '@fluentui/react/lib/DetailsList';
 import { Overlay } from '@fluentui/react/lib/Overlay';
-import { 
-   ScrollablePane, 
-   ScrollbarVisibility 
+import {
+    ScrollablePane,
+    ScrollbarVisibility
 } from '@fluentui/react/lib/ScrollablePane';
 import { Stack } from '@fluentui/react/lib/Stack';
 import { Sticky } from '@fluentui/react/lib/Sticky';
@@ -16,6 +16,9 @@ import { StickyPositionType } from '@fluentui/react/lib/Sticky';
 import { IObjectWithKey } from '@fluentui/react/lib/Selection';
 import { IRenderFunction } from '@fluentui/react/lib/Utilities';
 import * as React from 'react';
+import { useConst, useForceUpdate } from "@fluentui/react-hooks";
+import { Selection } from "@fluentui/react/lib/Selection";
+import { SelectionMode } from "@fluentui/react/lib/Utilities";
 
 type DataSet = ComponentFramework.PropertyHelper.DataSetApi.EntityRecord & IObjectWithKey;
 
@@ -35,6 +38,8 @@ export interface GridProps {
     itemsLoading: boolean;
     highlightValue: string | null;
     highlightColor: string | null;
+    setSelectedRecords: (ids: string[]) => void;
+    onNavigate: (item?: ComponentFramework.PropertyHelper.DataSetApi.EntityRecord) => void;
 }
 
 const onRenderDetailsHeader: IRenderFunction<IDetailsHeaderProps> = (props, defaultRender) => {
@@ -74,7 +79,28 @@ export const Grid = React.memo((props: GridProps) => {
         filtering,
         currentPage,
         itemsLoading,
+        setSelectedRecords,
+        onNavigate,
     } = props;
+
+    const forceUpdate = useForceUpdate();
+    const onSelectionChanged = React.useCallback(() => {
+        const items = selection.getItems() as DataSet[];
+        const selected = selection.getSelectedIndices().map((index: number) => {
+            const item: DataSet | undefined = items[index];
+            return item && items[index].getRecordId();
+        });
+
+        setSelectedRecords(selected);
+        forceUpdate();
+    }, [forceUpdate]);
+
+    const selection: Selection = useConst(() => {
+        return new Selection({
+            selectionMode: SelectionMode.single,
+            onSelectionChanged: onSelectionChanged,
+        });
+    });
 
     const [isComponentLoading, setIsLoading] = React.useState<boolean>(false);
 
@@ -96,8 +122,8 @@ export const Grid = React.memo((props: GridProps) => {
             .map((col) => {
                 const sortOn = sorting && sorting.find((s) => s.name === col.name);
                 const filtered =
-                    filtering && 
-                    filtering.conditions && 
+                    filtering &&
+                    filtering.conditions &&
                     filtering.conditions.find((f) => f.attributeName == col.name);
                 return {
                     key: col.name,
@@ -133,6 +159,8 @@ export const Grid = React.memo((props: GridProps) => {
                         checkButtonAriaLabel="select row"
                         layoutMode={DetailsListLayoutMode.fixedColumns}
                         constrainMode={ConstrainMode.unconstrained}
+                        selection={selection}
+                        onItemInvoked={onNavigate}
                     ></DetailsList>
                 </ScrollablePane>
                 {(itemsLoading || isComponentLoading) && <Overlay />}
