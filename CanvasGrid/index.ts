@@ -29,6 +29,34 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
             this.context.parameters.records.openDatasetItem(item.getNamedReference());
         }
     };
+    onSort = (name: string, desc: boolean): void => {
+        const sorting = this.context.parameters.records.sorting || []; // Check if sorting is undefined, use empty array as fallback
+        while (sorting.length > 0) {
+            sorting.pop();
+        }
+        sorting.push({
+            name: name,
+            sortDirection: desc ? 1 : 0,
+        });
+        this.context.parameters.records.refresh();
+    };
+      
+      onFilter = (name: string, filter: boolean): void => {
+        const filtering = this.context.parameters.records.filtering;
+        if (filter) {
+          filtering.setFilter({
+            conditions: [
+              {
+                attributeName: name,
+                conditionOperator: 12, // Does not contain Data
+              },
+            ],
+          } as ComponentFramework.PropertyHelper.DataSetApi.FilterExpression);
+        } else {
+          filtering.clearFilter();
+        }
+        this.context.parameters.records.refresh();
+      };
 
     /**
      * Empty constructor.
@@ -88,6 +116,11 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
         const allocatedHeight = parseInt(
             context.mode.allocatedHeight as unknown as string
         );
+        if (this.filteredRecordCount !== this.sortedRecordsIds.length) {
+            this.filteredRecordCount = this.sortedRecordsIds.length;
+            this.notifyOutputChanged();
+        }
+        
 
         ReactDOM.render(
             React.createElement(Grid, {
@@ -108,6 +141,8 @@ export class CanvasGrid implements ComponentFramework.StandardControl<IInputs, I
                 highlightColor: this.context.parameters.HighlightColor.raw,
                 setSelectedRecords: this.setSelectedRecords,
                 onNavigate: this.onNavigate,
+                onSort: this.onSort,
+                onFilter: this.onFilter,
             }),
             this.container
         );
